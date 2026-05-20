@@ -1,6 +1,7 @@
-streamlit
-tensorflow-cpu==2.15.0
-pandas
-numpy
-scikit-learn
-tf-keras==2.15.0
+streamlit>=1.40.0
+onnxruntime
+numpy>=1.24.0
+pillow>=11.0.0
+pandas>=2.0.0
+matplotlib>=3.8.0
+scikit-learn>=1.4.0

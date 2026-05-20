@@ -1,11 +1,14 @@
 import streamlit as st
 import numpy as np
-import tensorflow as tf
 from sklearn.preprocessing import StandardScaler,LabelEncoder,OneHotEncoder
 import pandas as pd
 import pickle
-import tf_keras
-model = tf_keras.models.load_model('model.h5')
+import onnxruntime as ort
+
+def load_trained_model():
+    return ort.InferenceSession("model.onnx")
+
+model = load_trained_model()
 
 #load the encoders and sacler
 
@@ -51,13 +54,25 @@ geo_encoded = onehot_encoder_geo.transform([[geography]]).toarray()
 geo_encoded_df = pd.DataFrame(geo_encoded, columns=onehot_encoder_geo.get_feature_names_out(['Geography']))
 
 # Combine one-hot encoded columns with input data
-input_data = pd.concat([input_data.reset_index(drop=True), geo_encoded_df], axis=1)
+input_data = pd.concat(
+    [input_data.reset_index(drop=True), geo_encoded_df],
+    axis=1
+)
+
+# Match training column order
+input_data = input_data.reindex(columns=scaler.feature_names_in_)
 
 # Scale the input data
 input_data_scaled = scaler.transform(input_data)
 
 # Predict churn
-prediction = model.predict(input_data_scaled)
+input_name = model.get_inputs()[0].name
+
+prediction = model.run(
+    None,
+    {input_name: input_data_scaled.astype(np.float32)}
+)[0]
+
 prediction_proba = prediction[0][0]
 
 st.write(f'Churn Probability: {prediction_proba:.2f}')
